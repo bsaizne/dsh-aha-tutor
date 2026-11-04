@@ -135,7 +135,12 @@ export function createLlmPort({ getLlm, getDefault, getAttachments, prefs, logge
     }
     let textValue = ''
     let finish = null
-    const messages = [{ role: 'user', content: await content(user, images, prepared, requireImages) }]
+    // Some OpenAI-compatible bridges drop the system role outright, which would
+    // lose the persona and the whole board format. Keep sending "system" for
+    // providers that honour it, and also put it at the head of the user turn.
+    const blocks = await content(user, images, prepared, requireImages)
+    if (system && Array.isArray(blocks) && blocks[0]?.type === 'text') blocks[0].text = `${system}\n\n${blocks[0].text ?? ''}`
+    const messages = [{ role: 'user', content: blocks }]
     try {
       for await (const chunk of prepared.stream({ ...prepared.config, ...(system ? { system } : {}), messages, signal: fused })) {
         if (chunk.type === 'text-delta' && typeof chunk.text === 'string') {

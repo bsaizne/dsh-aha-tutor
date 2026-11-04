@@ -19,7 +19,20 @@ export function SettingsScreen() {
   const [voices, setVoices] = useState(() => listVoices())
   const [keyDraft, setKeyDraft] = useState('')
   const [testing, setTesting] = useState(false)
+  const [local, setLocal] = useState(null)
+  const [localBusy, setLocalBusy] = useState('')
+  const loadLocal = () => api.call('local-service/status').then(setLocal).catch(() => setLocal(null))
+  // The server is only ever started by the learner: nothing here runs on its own.
+  const actLocal = action => attempt('local', async () => {
+    setLocalBusy(action)
+    try {
+      setLocal(await api.call(`local-service/${action}`))
+    } finally {
+      setLocalBusy('')
+    }
+  })
   useEffect(() => onVoicesChanged(setVoices), [])
+  useEffect(() => { loadLocal() }, [])
 
   async function attempt(area, action) {
     setError(null)
@@ -143,6 +156,31 @@ export function SettingsScreen() {
       </div> : null}
       <div><button type="button" className="aha-btn" disabled={testing || settings.voiceEngine === 'off'} onClick={test}>{testing ? <span className="aha-spinner" /> : '🔊'} {t('testVoice')}</button></div>
       <ErrorLine error={errorIn('test')} reveal />
+    </section>
+
+    <section className="aha-card">
+      <div className="aha-spread">
+        <b>{t('localServiceTitle')}</b>
+        <span className={local?.running ? 'aha-ok' : 'aha-hint'}>{local?.running ? t('localServiceRunning', { port: local.port }) : t('localServiceStopped')}</span>
+      </div>
+      <p className="aha-hint">{t('localServiceHint')}</p>
+      <label className="aha-label">{t('localServiceRoot')}
+        <input className="aha-input" defaultValue={settings.localServiceRoot ?? ''} key={`local-root:${settings.localServiceRoot ?? ''}`} placeholder={t('localServiceRootExample')} onBlur={event => {
+          const value = event.currentTarget.value.trim()
+          if (value !== (settings.localServiceRoot ?? '')) save('local', { localServiceRoot: value })
+        }} />
+      </label>
+      <div className="aha-row" style={{ gap: 6 }}>
+        <button type="button" className="aha-btn" disabled={localBusy !== '' || local?.running === true} onClick={() => actLocal('start')}>{localBusy === 'start' ? <span className="aha-spinner" /> : null} {t('localServiceStart')}</button>
+        <button type="button" className="aha-btn" data-kind="ghost" disabled={localBusy !== '' || local?.running !== true} onClick={() => actLocal('stop')}>{t('localServiceStop')}</button>
+        <button type="button" className="aha-btn" data-kind="ghost" disabled={localBusy !== ''} onClick={loadLocal}>{t('localServiceRefresh')}</button>
+      </div>
+      <div className="aha-row" style={{ gap: 6 }}>
+        <b>{t('localServiceAuto')}</b>
+        {[[true, 'localServiceAutoOn'], [false, 'localServiceAutoOff']].map(([value, label]) => <button key={String(value)} type="button" className="aha-chip" data-active={(settings.localAutoStart === true) === value} onClick={() => save('local', { localAutoStart: value })}>{t(label)}</button>)}
+      </div>
+      <p className="aha-hint">{t('localServiceAutoHint')}</p>
+      <ErrorLine error={errorIn('local')} reveal />
     </section>
 
     <section className="aha-card">

@@ -96,7 +96,7 @@ const ITEM_KINDS = { sheets: 'chs', decks: 'dck', assist: 'thd', shorts: 'sht' }
 const GRADES = ['again', 'hard', 'good', 'easy']
 const STYLES = ['analogy', 'visual', 'example', 'simpler', 'deeper']
 
-export function createRoutes({ courses, lessons, learner, studio, projects, jobs, settings, tts, plugin, info, speechInput }) {
+export function createRoutes({ courses, lessons, learner, studio, projects, jobs, settings, localService, tts, plugin, info, speechInput }) {
   return {
     'app/info': () => info(),
 
@@ -231,6 +231,12 @@ export function createRoutes({ courses, lessons, learner, studio, projects, jobs
     'settings/save': payload => settings.save(payload.settings ?? {}),
     'settings/set-key': payload => settings.setKey({ provider: payload.provider, key: payload.key }),
     'settings/clear-key': payload => settings.clearKey({ provider: payload.provider }),
+
+    // The local voice server runs on this machine only when the learner starts
+    // it here, or lets a class start it on demand.
+    'local-service/status': () => localService.status(),
+    'local-service/start': () => localService.start(),
+    'local-service/stop': () => localService.stop(),
     'models/list': () => settings.models(),
 
     'plugin/version': payload => plugin.read({ force: payload.force === true }),

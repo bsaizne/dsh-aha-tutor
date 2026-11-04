@@ -11,6 +11,8 @@ export const PREF_DEFAULTS = Object.freeze({
   quickModel: '',
   voiceEngine: 'browser',
   voiceRate: 1,
+  localServiceRoot: '',
+  localAutoStart: false,
   boardTheme: 'auto',
   boardFont: 'hand',
   boardView: 'canvas',
@@ -26,6 +28,8 @@ export function cleanPrefs(input = {}, base = PREF_DEFAULTS) {
   for (const key of ['teachProvider', 'teachModel', 'quickProvider', 'quickModel']) {
     if (input[key] !== undefined) next[key] = ROUTE.test(String(input[key])) ? String(input[key]) : base[key]
   }
+  if (input.localServiceRoot !== undefined) next.localServiceRoot = String(input.localServiceRoot).trim().slice(0, 400)
+  if (typeof input.localAutoStart === 'boolean') next.localAutoStart = input.localAutoStart
   if (['browser', 'cloud', 'off'].includes(input.voiceEngine)) next.voiceEngine = input.voiceEngine
   if (input.voiceRate !== undefined) {
     const rate = Number(input.voiceRate)

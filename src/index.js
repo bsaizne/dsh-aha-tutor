@@ -26,6 +26,7 @@ import { createSpeechInput } from './host/speech.js'
 import { createStore, DATA_DIR_NAME, resolveDshHome } from './host/store.js'
 import { createStudio } from './host/studio.js'
 import { createTts } from './host/tts.js'
+import { createLocalService, localTarget } from './host/local-service.js'
 
 export const name = 'aha-tutor'
 export const inject = ['llm']
@@ -56,6 +57,7 @@ export function apply(ctx) {
   const projects = createProjects({ store, llm, jobs, courses })
   const samples = createSamples({ dirUrl: new URL('../samples/', import.meta.url), courses })
   const tts = createTts({ cacheDir: store.paths.ttsCache(), getSecret: provider => keys.read(provider) })
+  const localService = createLocalService({ getPrefs: () => prefs.read(), logger })
   const plugin = createPluginManager()
   const settings = createSettingsService({ prefs, keys, llmPort: llm })
   // DSH's speechToText exists only while its Voice Input bundle is enabled.
@@ -65,6 +67,16 @@ export function apply(ctx) {
     await ready
     const current = prefs.read()
     const chosen = provider ?? current.ttsProvider
+    // On demand only: the learner turned auto-start on and the address is local.
+    if (chosen === 'openai' && current.localAutoStart === true && localTarget(current.tts?.openai?.baseUrl).local) {
+      try {
+        const state = await localService.status()
+        if (!state.running) await localService.start()
+      } catch (error) {
+        // The synthesis below reports what the learner sees; this only names why.
+        logger?.debug?.('aha-tutor local voice auto-start failed: %s', error?.message)
+      }
+    }
     return tts.synthesize({ provider: chosen, config: current.tts?.[chosen] ?? {}, text, rate: 1, signal })
   }
 
@@ -80,7 +92,7 @@ export function apply(ctx) {
   }
 
   const routes = {
-    ...createRoutes({ courses, lessons, learner, studio, projects, jobs, settings, tts: { speak }, plugin, info, speechInput }),
+    ...createRoutes({ courses, lessons, learner, studio, projects, jobs, settings, localService, tts: { speak }, plugin, info, speechInput }),
     'app/info': payload => info(payload),
     'samples/list': () => samples.list(),
     'samples/import': payload => samples.importSample({ id: payload.id }),
