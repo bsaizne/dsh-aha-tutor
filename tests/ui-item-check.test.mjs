@@ -151,10 +151,10 @@ function textOf(node) {
   return (node.children ?? []).map(textOf).join('')
 }
 
-function renderCard(props) {
+function renderCard(props, component = bundle.ItemCard) {
   const calls = []
   const api = { call: async (endpoint, payload) => { calls.push([endpoint, payload]); return endpoint === 'speech/status' ? { state: 'off' } : null } }
-  const element = extra => h(bundle.AppContext.Provider, { value: { api, t, language: 'zh' } }, h(bundle.ItemCard, { ...props, ...extra }))
+  const element = extra => h(bundle.AppContext.Provider, { value: { api, t, language: 'zh' } }, h(component, { ...props, ...extra }))
   let renderer
   act(() => { renderer = TestRenderer.create(element()) })
   return { renderer, calls, update: extra => act(() => renderer.update(element(extra))) }
@@ -247,6 +247,44 @@ test('a card without checks offers none, and a question fixed earlier shows its 
   await press(other, zh.cancel)
   assert.equal(other.root.findAllByType('form').length, 0)
   assert.equal(buttons(other, zh.itemChallenge).length, 1)
+})
+
+test('a classroom check folds away without losing the answer or answering by keyboard', async () => {
+  const previousWindow = globalThis.window
+  const listeners = new Set()
+  globalThis.window = {
+    addEventListener: (type, listener) => { if (type === 'keydown') listeners.add(listener) },
+    removeEventListener: (type, listener) => { if (type === 'keydown') listeners.delete(listener) },
+  }
+  try {
+    const { renderer, update } = renderCard({ item: PRIME, language: 'zh-CN', onContinue: () => undefined }, bundle.CheckCard)
+    const card = () => renderer.root.find(node => node.props?.className === 'aha-checkCard')
+    const body = () => renderer.root.find(node => node.props?.className === 'aha-checkBody')
+    assert.equal(card().props['data-collapsed'], 'false')
+    assert.equal(body().props.hidden, false)
+    assert.equal(listeners.size, 1)
+
+    await press(renderer, '23')
+    assert.equal(buttons(renderer, '23')[0].props['data-active'], true)
+    await press(renderer, zh.checkHide)
+    assert.equal(card().props['data-collapsed'], 'true')
+    assert.equal(body().props.hidden, true)
+    assert.equal(renderer.root.findByType(bundle.ItemCard).props.keyboard, false)
+    assert.equal(listeners.size, 0, 'a hidden question has no global keyboard shortcuts')
+
+    await press(renderer, zh.checkShow)
+    assert.equal(body().props.hidden, false)
+    assert.equal(buttons(renderer, '23')[0].props['data-active'], true, 'the selected answer survives folding')
+    assert.equal(listeners.size, 1)
+
+    await press(renderer, zh.checkHide)
+    update({ item: { ...PRIME, id: 'i2' } })
+    assert.equal(card().props['data-collapsed'], 'false', 'each new question opens')
+    assert.equal(body().props.hidden, false)
+  } finally {
+    if (previousWindow === undefined) delete globalThis.window
+    else globalThis.window = previousWindow
+  }
 })
 
 test('a question\'s prompt is set in the prompt type; its options take the text around them', () => {

@@ -13,7 +13,7 @@ import { ClassroomTour } from './ClassroomTour.jsx'
 import { ErrorLine, errorText, Spinner } from './components.jsx'
 import { openMainScreen } from './context.js'
 import { useApp, useDarkMode, useLasting, usePersistentState } from './hooks.js'
-import { ItemCard } from './ItemCard.jsx'
+import { CheckCard } from './CheckCard.jsx'
 import { PREP_DELAY_MS } from './prep.js'
 import { PrepProgress } from './PrepProgress.jsx'
 import { revealTop } from './scroll.js'
@@ -553,10 +553,7 @@ export function Classroom({ scope, title, crumb, steps: initialSteps = [], strea
           <Board steps={steps} position={snapshot ? { index: snapshot.index, op: snapshot.op, progress: snapshot.progress, now: snapshot.now } : { index: 0, op: 0, progress: 0 }} theme={boardTheme} font={settings.boardFont === 'standard' ? 'standard' : 'hand'} view={settings.boardView === 'pages' ? 'pages' : 'canvas'}
             buffering={(buffering || Boolean(asking)) && !preparing} bufferingLabel={bufferingLabel} onInteract={() => player.pause()} cover={check ? checkCover : 0} />
           {preparing ? <PrepProgress prep={prep} label={bufferingLabel} first={!steps.length} hand={settings.boardFont !== 'standard'} /> : null}
-          {check ? <div ref={checkCard} className="aha-checkCard">
-            <div className="aha-spread"><b>{t('checkTitle')}</b></div>
-            <ItemCard item={check} language={language} onResult={onCheckResult} onContinue={continueCheck} continueLabel={needsCorrection ? t('seeCorrection') : undefined} keyboard />
-          </div> : null}
+          {check ? <CheckCard ref={checkCard} item={check} language={language} onResult={onCheckResult} onContinue={continueCheck} continueLabel={needsCorrection ? t('seeCorrection') : undefined} /> : null}
         </div>
         {captions && caption ? <div className="aha-caption"><Inline text={caption} /></div> : <div className="aha-caption" />}
         <ErrorLine error={error} style={{ textAlign: 'center' }} />

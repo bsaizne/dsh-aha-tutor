@@ -229,6 +229,9 @@ a.aha-btn{text-decoration:none}
 /* Narrow: the panel goes under the board and the classroom scrolls, with the panel's header peeking in at the bottom. */
 @container classroom (max-width:900px){.aha-classBody{flex-direction:column;overflow-y:auto}.aha-classMain{flex:1 0 auto;min-height:calc(100% - 52px)}.aha-stage{min-height:300px}.aha-panel{flex:0 0 auto;width:auto}.aha-transcript{flex:0 1 auto;max-height:260px}}
 .aha-checkCard{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);width:min(600px,calc(100% - 28px));border-radius:14px;background:var(--aha-surface);border:1px solid var(--aha-border);box-shadow:0 14px 40px rgba(0,0,0,.22);padding:12px 14px 0;display:flex;flex-direction:column;gap:8px;z-index:5;max-height:62%;overflow:auto}
+.aha-checkCard[data-collapsed=true]{width:auto;min-width:180px;max-width:calc(100% - 28px);max-height:none;padding:6px 8px;overflow:hidden}
+.aha-checkHead{align-items:center;gap:12px}
+.aha-checkToggle{flex:0 0 auto;white-space:nowrap}
 .aha-checkCard .aha-itemActions{position:sticky;bottom:0;background:var(--aha-surface);padding:8px 0 12px;margin-top:2px}
 .aha-options[data-grid=true]{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .aha-checkCard .aha-option{padding:7px 10px}
